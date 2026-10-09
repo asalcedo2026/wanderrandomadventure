@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f7f7fa" />
+    <title>Wander | Random Adventure Generator</title>
+    <style>
+      :root {
+        --canvas: #f7f7fa;
+        --surface: #fff;
+        --text: #17171b;
+        --muted: #71717a;
+        --line: #e4e4e7;
+        --primary: #6d5dfb;
+        --primary2: #8b5cf6;
+        --shadow: 0 24px 70px rgba(24, 24, 27, 0.12);
+        --radius: 26px;
+        --accent: #6d5dfb;
+        --accent-soft: #ede9fe;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--canvas);
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .app {
+        min-height: 100vh;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-bottom: 1px solid rgba(228, 228, 231, 0.8);
+        background: rgba(247, 247, 250, 0.84);
+        backdrop-filter: blur(18px);
+      }
+      .nav {
+        max-width: 1180px;
+        margin: auto;
+        padding: 14px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      .mark {
+        width: 38px;
+        height: 38px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        color: white;
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        box-shadow: 0 10px 25px rgba(109, 93, 251, 0.28);
+      }
+      .saved {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 14px;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: white;
+        border: 1px solid var(--line);
+      }
+      main {
+        max-width: 1180px;
+        margin: auto;
+        padding: 58px 22px 90px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.04fr) minmax(380px, 0.96fr);
+        gap: 68px;
+        align-items: start;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 11px;
+        border: 1px solid #ddd6fe;
+        border-radius: 999px;
+        background: #f5f3ff;
+        color: #6d28d9;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+      .hero h1 {
+        font-size: clamp(46px, 6vw, 72px);
+        line-height: 0.97;
+        letter-spacing: -0.06em;
+        margin: 23px 0 20px;
+        max-width: 690px;
+      }
+      .hero-copy {
+        font-size: 18px;
+        line-height: 1.72;
+        color: var(--muted);
+        max-width: 610px;
+        margin: 0 0 34px;
+      }
+      .panel {
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(228, 228, 231, 0.9);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: 0 8px 30px rgba(24, 24, 27, 0.045);
+      }
+      .section-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 13px;
+      }
+      .section-label strong {
+        font-size: 14px;
+      }
+      .section-label span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .moods {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .choice {
+        min-height: 74px;
+        border: 1px solid var(--line);
+        border-radius: 17px;
+        background: #fff;
+        padding: 12px 8px;
+        color: #52525b;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition: 0.18s ease;
+      }
+      .choice .icon {
+        font-size: 22px;
+      }
+      .choice:hover {
+        transform: translateY(-2px);
+        border-color: #c4b5fd;
+        box-shadow: 0 9px 25px rgba(109, 93, 251, 0.09);
+      }
+      .choice[aria-pressed="true"] {
+        color: white;
+        border-color: var(--primary);
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        box-shadow: 0 12px 28px rgba(109, 93, 251, 0.24);
+      }
+      .choice span:last-child {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .platform-wrap {
+        display: none;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      .platform-wrap.show {
+        display: block;
+        animation: rise 0.28s ease;
+      }
+      .platforms,
+      .groups {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+      }
+      .pill {
+        border: 1px solid var(--line);
+        background: white;
+        color: #52525b;
+        min-height: 44px;
+        padding: 0 14px;
+        border-radius: 13px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: 0.16s;
+      }
+      .pill:hover {
+        border-color: #c4b5fd;
+      }
+      .pill[aria-pressed="true"] {
+        background: #18181b;
+        color: white;
+        border-color: #18181b;
+      }
+      .secondary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 13px;
+        margin-top: 13px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .field label {
+        font-size: 13px;
+        font-weight: 750;
+      }
+      .select {
+        height: 48px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: white;
+        color: #3f3f46;
+        padding: 0 14px;
+        outline: none;
+      }
+      .select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(109, 93, 251, 0.14);
+      }
+      .group-wrap {
+        margin-top: 17px;
+      }
+      .generate {
+        width: 100%;
+        min-height: 58px;
+        margin-top: 18px;
+        border: 0;
+        border-radius: 17px;
+        color: white;
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        font-weight: 800;
+        font-size: 16px;
+        box-shadow: 0 16px 30px rgba(109, 93, 251, 0.28);
+        transition: 0.18s;
+      }
+      .generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 19px 38px rgba(109, 93, 251, 0.34);
+      }
+      .generate:active {
+        transform: translateY(0);
+      }
+      button:focus-visible,
+      .select:focus-visible {
+        outline: 3px solid rgba(109, 93, 251, 0.34);
+        outline-offset: 3px;
+      }
+      .result-column {
+        position: sticky;
+        top: 94px;
+      }
+      .card {
+        min-height: 620px;
+        border-radius: 32px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        position: relative;
+      }
+      .empty {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 40px;
+        border: 1px solid var(--line);
+        background: white;
+      }
+      .empty-orbit {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 35% 30%, #ddd6fe, transparent 58%), #f4f4f5;
+        position: relative;
+      }
+      .empty-orbit:before,
+      .empty-orbit:after {
+        content: "";
+        position: absolute;
+        border: 1px solid #c4b5fd;
+        border-radius: 50%;
+        inset: -17px;
+      }
+      .empty-orbit:after {
+        inset: -35px;
+        opacity: 0.4;
+      }
+      .empty .big {
+        font-size: 54px;
+      }
+      .empty h2 {
+        font-size: 28px;
+        letter-spacing: -0.04em;
+        margin: 48px 0 9px;
+      }
+      .empty p {
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 330px;
+        margin: 0;
+      }
+      .mission {
+        display: none;
+        color: white;
+        padding: 34px;
+        background:
+          radial-gradient(
+            circle at 90% 4%,
+            color-mix(in srgb, var(--accent) 40%, transparent),
+            transparent 30%
+          ),
+          linear-gradient(145deg, #18181b 0%, #09090b 100%);
+      }
+      .mission.show {
+        display: flex;
+        flex-direction: column;
+        animation: rise 0.34s ease;
+      }
+      .mission-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .mission-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        font-size: 28px;
+        background: color-mix(in srgb, var(--accent) 24%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+      }
+      .number {
+        font-weight: 800;
+        color: #71717a;
+        font-size: 42px;
+        letter-spacing: -0.06em;
+      }
+      .kicker {
+        color: color-mix(in srgb, var(--accent) 75%, white);
+        font-size: 12px;
+        font-weight: 850;
+        letter-spacing: 0.16em;
+        margin: 50px 0 14px;
+        text-transform: uppercase;
+      }
+      .mission h2 {
+        font-size: clamp(38px, 5vw, 54px);
+        line-height: 1;
+        letter-spacing: -0.055em;
+        margin: 0;
+      }
+      .mission .desc {
+        color: #d4d4d8;
+        line-height: 1.75;
+        font-size: 16px;
+        margin: 24px 0;
+      }
+      .bonus {
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid color-mix(in srgb, var(--accent) 32%, #3f3f46);
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+      }
+      .bonus small {
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        font-weight: 850;
+        color: color-mix(in srgb, var(--accent) 70%, white);
+        margin-bottom: 8px;
+      }
+      .bonus p {
+        margin: 0;
+        line-height: 1.55;
+        font-weight: 650;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: #27272a;
+        border: 1px solid #3f3f46;
+        color: #e4e4e7;
+        font-size: 12px;
+      }
+      .actions {
+        margin-top: auto;
+        padding-top: 28px;
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 9px;
+      }
+      .action {
+        min-height: 46px;
+        border-radius: 14px;
+        border: 1px solid #3f3f46;
+        background: #27272a;
+        color: white;
+        padding: 0 15px;
+        font-weight: 750;
+      }
+      .action.primary {
+        background: white;
+        color: #18181b;
+        border-color: white;
+      }
+      .action:hover {
+        filter: brightness(1.12);
+      }
+      .note {
+        margin-top: 78px;
+        padding-top: 28px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 25px;
+      }
+      .note h3 {
+        font-size: 28px;
+        letter-spacing: -0.04em;
+        margin: 7px 0;
+      }
+      .note p {
+        max-width: 500px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      .note b {
+        color: var(--primary);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translate(-50%, 20px);
+        opacity: 0;
+        pointer-events: none;
+        background: #18181b;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 13px;
+        box-shadow: var(--shadow);
+        transition: 0.25s;
+        z-index: 50;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (max-width: 900px) {
+        main {
+          padding-top: 38px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 38px;
+        }
+        .result-column {
+          position: static;
+        }
+        .card {
+          min-height: 560px;
+        }
+        .note {
+          margin-top: 56px;
+        }
+        .moods {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      @media (max-width: 560px) {
+        .nav {
+          padding: 11px 15px;
+        }
+        .saved {
+          padding: 8px 10px;
+        }
+        .saved .saved-word {
+          display: none;
+        }
+        main {
+          padding: 30px 15px 100px;
+        }
+        .hero h1 {
+          font-size: 46px;
+        }
+        .hero-copy {
+          font-size: 16px;
+        }
+        .panel {
+          padding: 15px;
+          border-radius: 22px;
+        }
+        .moods {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .choice {
+          min-height: 68px;
+        }
+        .secondary {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          min-height: 590px;
+          border-radius: 26px;
+        }
+        .mission {
+          padding: 25px 21px;
+        }
+        .mission h2 {
+          font-size: 42px;
+        }
+        .actions {
+          grid-template-columns: 1fr 48px 48px;
+        }
+        .action {
+          padding: 0;
+        }
+        .action-label {
+          display: none;
+        }
+        .note {
+          display: block;
+        }
+        .generate {
+          position: sticky;
+          bottom: 12px;
+          z-index: 10;
+          border: 5px solid rgba(247, 247, 250, 0.8);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <nav class="nav" aria-label="Primary">
+          <div class="brand">
+            <div class="mark" aria-hidden="true">✦</div>
+            Wander
+          </div>
+          <button
+            class="saved"
+            id="savedBtn"
+            type="button"
+            aria-label="View saved adventures"
+          >
+            ♡ <span id="savedCount">0</span>
+            <span class="saved-word">saved</span>
+          </button>
+        </nav>
+      </header>
+      <main>
+        <div class="grid">
+          <section class="hero" aria-labelledby="page-title">
+            <div class="eyebrow">✦ RANDOM ADVENTURE GENERATOR</div>
+            <h1 id="page-title">Make today less predictable.</h1>
+            <p class="hero-copy">
+              Pick a vibe, set your limits, and get a small mission worth doing.
+              Go outside, stay in, or turn your gaming setup into tonight's
+              adventure.
+            </p>
+            <div class="panel">
+              <div class="section-label">
+                <strong>Choose your mood</strong><span>Start with one</span>
+              </div>
+              <div
+                class="moods"
+                id="moods"
+                role="group"
+                aria-label="Adventure mood"
+              ></div>
+              <div class="platform-wrap" id="platformWrap">
+                <div class="section-label">
+                  <strong>Gaming platform</strong><span>Optional</span>
+                </div>
+                <div
+                  class="platforms"
+                  id="platforms"
+                  role="group"
+                  aria-label="Gaming platform"
+                ></div>
+              </div>
+              <div class="secondary">
+                <div class="field">
+                  <label for="budget">Budget</label
+                  ><select class="select" id="budget">
+                    <option>Free</option>
+                    <option selected>₱500</option>
+                    <option>₱1,000</option>
+                    <option>₱2,000+</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="duration">Time available</label
+                  ><select class="select" id="duration">
+                    <option>30 min</option>
+                    <option selected>1–2 hours</option>
+                    <option>Half day</option>
+                    <option>Whole day</option>
+                  </select>
+                </div>
+              </div>
+              <div class="group-wrap">
+                <div class="section-label">
+                  <strong>Who's going?</strong
+                  ><span id="groupHint">Choose one</span>
+                </div>
+                <div
+                  class="groups"
+                  id="groups"
+                  role="group"
+                  aria-label="Who's going"
+                ></div>
+              </div>
+              <button class="generate" id="generate" type="button">
+                ✦ Generate my adventure
+              </button>
+            </div>
+          </section>
+          <aside class="result-column" aria-label="Generated adventure">
+            <div class="card empty" id="empty">
+              <div>
+                <div class="empty-orbit"><div class="big">↗</div></div>
+                <h2>Ready when you are.</h2>
+                <p>
+                  Your next mini-adventure will appear here. Choose your
+                  preferences, then let chance take over.
+                </p>
+              </div>
+            </div>
+            <article class="card mission" id="mission" aria-live="polite">
+              <div class="mission-head">
+                <div class="mission-icon" id="resultIcon">🎮</div>
+                <div class="number" id="missionNo">01</div>
+              </div>
+              <div class="kicker" id="resultKicker"></div>
+              <h2 id="resultTitle"></h2>
+              <p class="desc" id="resultDesc"></p>
+              <div class="bonus">
+                <small>✦ Bonus mission</small>
+                <p id="resultBonus"></p>
+              </div>
+              <div class="meta" id="resultMeta"></div>
+              <div class="actions">
+                <button class="action primary" id="again" type="button">
+                  ↻ <span class="action-label">Another adventure</span></button
+                ><button
+                  class="action"
+                  id="save"
+                  type="button"
+                  aria-label="Save adventure"
+                >
+                  ♡</button
+                ><button
+                  class="action"
+                  id="share"
+                  type="button"
+                  aria-label="Share adventure"
+                >
+                  ↗
+                </button>
+              </div>
+            </article>
+          </aside>
+        </div>
+        <section class="note">
+          <div>
+            <b>HOW IT WORKS</b>
+            <h3>Less planning. More doing.</h3>
+          </div>
+          <p>
+            Wander keeps the choices quick and the result actionable. Your saved
+            missions stay on this device, and no account or database is
+            required.
+          </p>
+        </section>
+        <footer
+          style="
+            text-align: center;
+            padding: 30px 0 4px;
+            color: #a1a1aa;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+          "
+        >
+          Crafted by <strong style="color: #71717a">asalcedo</strong>
+        </footer>
+      </main>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+    <script>
+      const moods = [
+        ["Anything", "✦"],
+        ["Chill", "☕"],
+        ["Explore", "🧭"],
+        ["Food", "🍜"],
+        ["Active", "⚡"],
+        ["Creative", "📷"],
+        ["Gaming", "🎮"],
+      ];
+      const platforms = [
+        ["Any platform", "🎲"],
+        ["PC Games", "🖥️"],
+        ["Console Games", "🎮"],
+        ["Mobile Games", "📱"],
+      ];
+      const groups = ["Solo", "Partner", "Friends", "Family"];
+      const adventures = [
+        {
+          title: "Golden Hour Photo Walk",
+          category: "Creative",
+          icon: "📷",
+          accent: "#ec4899",
+          desc: "Pick a neighborhood you rarely explore. Walk without a route and capture five details you would normally miss.",
+          mission: "Take five photos built around one color theme.",
+          tags: groups,
+        },
+        {
+          title: "Coffee Shop Roulette",
+          category: "Chill",
+          icon: "☕",
+          accent: "#a16207",
+          desc: "Choose a direction and stop at the first interesting café you have never tried before.",
+          mission: "Order something you have never ordered before.",
+          tags: ["Solo", "Partner", "Friends"],
+        },
+        {
+          title: "No-Plan Food Hunt",
+          category: "Food",
+          icon: "🍜",
+          accent: "#f97316",
+          desc: "Explore a nearby area and let curiosity pick your meal instead of reviews or ratings.",
+          mission: "Try one local dish you normally skip.",
+          tags: ["Partner", "Friends", "Family"],
+        },
+        {
+          title: "Micro Nature Escape",
+          category: "Explore",
+          icon: "🌿",
+          accent: "#10b981",
+          desc: "Find a nearby park, trail, waterfront, or open space and step away from your usual routine.",
+          mission: "Keep your phone away for 30 uninterrupted minutes.",
+          tags: groups,
+        },
+        {
+          title: "Neighborhood Discovery Walk",
+          category: "Active",
+          icon: "⚡",
+          accent: "#3b82f6",
+          desc: "Take three turns you do not normally take and see where your neighborhood leads you.",
+          mission: "Find one place worth returning to.",
+          tags: groups,
+        },
+        {
+          title: "PC Game Wildcard",
+          category: "Gaming",
+          platform: "PC Games",
+          icon: "🖥️",
+          accent: "#8b5cf6",
+          desc: "Open your PC library and choose a game you own but have barely played. Give it one focused session.",
+          mission:
+            "Try a mode, build, class, or playstyle you normally ignore.",
+          tags: ["Solo", "Friends"],
+        },
+        {
+          title: "Couch Gaming Challenge",
+          category: "Gaming",
+          platform: "Console Games",
+          icon: "🎮",
+          accent: "#8b5cf6",
+          desc: "Pick a console game outside your usual rotation and turn the session into a low-pressure challenge.",
+          mission:
+            "Play one round using an unusual character or self-imposed rule.",
+          tags: groups,
+        },
+        {
+          title: "Mobile Game Mini Quest",
+          category: "Gaming",
+          platform: "Mobile Games",
+          icon: "📱",
+          accent: "#8b5cf6",
+          desc: "Pick a mobile game for a quick mini-adventure that fits into a spare pocket of your day.",
+          mission: "Complete one objective without making an in-app purchase.",
+          tags: groups,
+        },
+        {
+          title: "Multiplayer Mystery Pick",
+          category: "Gaming",
+          platform: "PC Games",
+          icon: "🖥️",
+          accent: "#8b5cf6",
+          desc: "Let chance choose tonight’s multiplayer session instead of returning to the usual favorite.",
+          mission:
+            "Invite a friend and play three matches before switching games.",
+          tags: ["Friends"],
+        },
+        {
+          title: "Console Backlog Rescue",
+          category: "Gaming",
+          platform: "Console Games",
+          icon: "🎮",
+          accent: "#8b5cf6",
+          desc: "Rescue one forgotten title from your console backlog and give it a proper uninterrupted session.",
+          mission: "Reach the next checkpoint, chapter, or major objective.",
+          tags: ["Solo", "Partner"],
+        },
+        {
+          title: "Pocket Arcade Break",
+          category: "Gaming",
+          platform: "Mobile Games",
+          icon: "📱",
+          accent: "#8b5cf6",
+          desc: "Turn a short break into a tiny arcade session with something quick and easy to jump into.",
+          mission: "Set a personal score and try to beat it twice.",
+          tags: ["Solo"],
+        },
+      ];
+      let state = {
+        mood: "Anything",
+        platform: "Any platform",
+        group: "Solo",
+        current: null,
+        count: 0,
+        saved: JSON.parse(localStorage.getItem("wander-saved") || "[]"),
+      };
+      const $ = (s) => document.querySelector(s);
+      const moodsEl = $("#moods"),
+        platformsEl = $("#platforms"),
+        groupsEl = $("#groups");
+      function renderButtons() {
+        moodsEl.innerHTML = moods
+          .map(
+            ([n, i]) =>
+              `<button class="choice" type="button" data-mood="${n}" aria-pressed="${state.mood === n}"><span class="icon">${i}</span><span>${n}</span></button>`,
+          )
+          .join("");
+        platformsEl.innerHTML = platforms
+          .map(
+            ([n, i]) =>
+              `<button class="pill" type="button" data-platform="${n}" aria-pressed="${state.platform === n}">${i} ${n}</button>`,
+          )
+          .join("");
+        groupsEl.innerHTML = groups
+          .map(
+            (n) =>
+              `<button class="pill" type="button" data-group="${n}" aria-pressed="${state.group === n}">${n}</button>`,
+          )
+          .join("");
+        $("#platformWrap").classList.toggle("show", state.mood === "Gaming");
+      }
+      function toast(t) {
+        const el = $("#toast");
+        el.textContent = t;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), 1800);
+      }
+      function generate() {
+        let pool = adventures.filter(
+          (a) =>
+            (state.mood === "Anything" || a.category === state.mood) &&
+            a.tags.includes(state.group) &&
+            (state.mood !== "Gaming" ||
+              state.platform === "Any platform" ||
+              a.platform === state.platform),
+        );
+        if (!pool.length) {
+          pool = adventures.filter(
+            (a) => state.mood === "Anything" || a.category === state.mood,
+          );
+          toast("No exact match, so Wander widened the search.");
+        }
+        const next = pool[Math.floor(Math.random() * pool.length)];
+        state.current = next;
+        state.count++;
+        document.documentElement.style.setProperty("--accent", next.accent);
+        document.documentElement.style.setProperty(
+          "--accent-soft",
+          next.accent + "22",
+        );
+        $("#empty").style.display = "none";
+        $("#mission").classList.add("show");
+        $("#missionNo").textContent = String(state.count).padStart(2, "0");
+        $("#resultIcon").textContent = next.icon;
+        $("#resultKicker").textContent =
+          (next.platform || next.category) + " · " + state.group;
+        $("#resultTitle").textContent = next.title;
+        $("#resultDesc").textContent = next.desc;
+        $("#resultBonus").textContent = next.mission;
+        $("#resultMeta").innerHTML =
+          `<span class="tag">💰 ${$("#budget").value}</span><span class="tag">⏱ ${$("#duration").value}</span><span class="tag">👤 ${state.group}</span>${next.platform ? `<span class="tag">🎮 ${next.platform}</span>` : ""}`;
+        updateSave();
+        if (innerWidth < 901)
+          $("#mission").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      function updateSave() {
+        const isSaved =
+          state.current &&
+          state.saved.some((x) => x.title === state.current.title);
+        $("#save").textContent = isSaved ? "♥" : "♡";
+        $("#save").setAttribute(
+          "aria-label",
+          isSaved ? "Remove saved adventure" : "Save adventure",
+        );
+        $("#savedCount").textContent = state.saved.length;
+      }
+      moodsEl.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-mood]");
+        if (!b) return;
+        state.mood = b.dataset.mood;
+        renderButtons();
+      });
+      platformsEl.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-platform]");
+        if (!b) return;
+        state.platform = b.dataset.platform;
+        renderButtons();
+      });
+      groupsEl.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-group]");
+        if (!b) return;
+        state.group = b.dataset.group;
+        renderButtons();
+      });
+      $("#generate").onclick = generate;
+      $("#again").onclick = generate;
+      $("#save").onclick = () => {
+        if (!state.current) return;
+        const i = state.saved.findIndex((x) => x.title === state.current.title);
+        if (i >= 0) {
+          state.saved.splice(i, 1);
+          toast("Removed from saved adventures");
+        } else {
+          state.saved.push(state.current);
+          toast("Adventure saved on this device");
+        }
+        localStorage.setItem("wander-saved", JSON.stringify(state.saved));
+        updateSave();
+      };
+      $("#share").onclick = async () => {
+        if (!state.current) return;
+        const text = `Wander mission: ${state.current.title}. ${state.current.mission}`;
+        try {
+          if (navigator.share)
+            await navigator.share({ title: "My Wander adventure", text });
+          else {
+            await navigator.clipboard.writeText(text);
+            toast("Adventure copied to clipboard");
+          }
+        } catch (e) {}
+      };
+      $("#savedBtn").onclick = () =>
+        toast(
+          state.saved.length
+            ? `${state.saved.length} adventure${state.saved.length === 1 ? "" : "s"} saved on this device`
+            : "No saved adventures yet",
+        );
+      renderButtons();
+      updateSave();
+    </script>
+  </body>
+</html>
